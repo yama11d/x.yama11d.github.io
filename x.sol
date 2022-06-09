@@ -54,29 +54,29 @@ interface IJarvisAggregator {
     function decimals() external view returns(uint8);
 }
 
-contract XsgdArbitrage {
-    IErc20 internal constant xsgd = IErc20(0x769434dcA303597C8fc4997Bf3DAB233e961Eda2);
-    IErc20 internal constant jsgd = IErc20(0xa926db7a4CC0cb1736D5ac60495ca8Eb7214B503);
+contract ParArbitrage {
+    IErc20 internal constant par = IErc20(0xE2Aa7db6dA1dAE97C5f5C6914d285fBfCC32A128);
+    IErc20 internal constant jeur = IErc20(0x4e3Decbb3645551B8A19f0eA1678079FCB33fB4c);
     IErc20 internal constant usdc = IErc20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
     IUniswapQuoter internal constant quoterUniswap = IUniswapQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
     IUniswapRouter internal constant routerUniswap = IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-    ICurvePool internal constant poolCurve = ICurvePool(0xeF75E9C7097842AcC5D0869E1dB4e5fDdf4BFDDA);
-    IJarvisPool internal constant poolJarvis = IJarvisPool(0x91436EB8038ecc12c60EE79Dfe011EdBe0e6C777);
-    IJarvisAggregator internal constant aggregatorJarvis = IJarvisAggregator(0x8CE3cAc0E6635ce04783709ca3CC4F5fc5304299);
-    address internal constant derivativeJarvis = 0xb6C683B89228455B15cF1b2491cC22b529cdf2c4;
+    ICurvePool internal constant poolCurve = ICurvePool(0xAd326c253A84e9805559b73A08724e11E49ca651);
+    IJarvisPool internal constant poolJarvis = IJarvisPool(0xCbbA8c0645ffb8aA6ec868f6F5858F2b0eAe34DA);
+    IJarvisAggregator internal constant aggregatorJarvis = IJarvisAggregator(0x73366Fe0AA0Ded304479862808e02506FE556a98);
+    address internal constant derivativeJarvis = 0x0Fa1A6b68bE5dD9132A09286a166d75480BE9165;
     constructor() {
-        xsgd.approve(address(routerUniswap), type(uint256).max);
-        xsgd.approve(address(poolCurve), type(uint256).max);
-        jsgd.approve(address(poolCurve), type(uint256).max);
-        jsgd.approve(address(poolJarvis), type(uint256).max);
+        par.approve(address(routerUniswap), type(uint256).max);
+        par.approve(address(poolCurve), type(uint256).max);
+        jeur.approve(address(poolCurve), type(uint256).max);
+        jeur.approve(address(poolJarvis), type(uint256).max);
         usdc.approve(address(routerUniswap), type(uint256).max);
         usdc.approve(address(poolJarvis), type(uint256).max);
     }
     function checkArbitrage(uint256 amount) public returns(uint256, uint256) {
-        if(rateJsgdToUsdc(rateXsgdToJsgd(rateUsdcToXsgd(amount))) >= rateXsgdToUsdc(rateJsgdToXsgd(rateUsdcToJsgd(amount)))) {
-            return (rateJsgdToUsdc(rateXsgdToJsgd(rateUsdcToXsgd(amount))), 0);
+        if(rateJeurToUsdc(rateParToJeur(rateUsdcToPar(amount))) >= rateParToUsdc(rateJeurToPar(rateUsdcToJeur(amount)))) {
+            return (rateJeurToUsdc(rateParToJeur(rateUsdcToPar(amount))), 0);
         }
-        return (rateXsgdToUsdc(rateJsgdToXsgd(rateUsdcToJsgd(amount))), 1);
+        return (rateParToUsdc(rateJeurToPar(rateUsdcToJeur(amount))), 1);
     }
     function arbitrage(uint256 amount, uint256 minimum, uint256 route, uint256 loop) public {
         uint256 balance;
@@ -86,7 +86,7 @@ contract XsgdArbitrage {
         usdc.transferFrom(msg.sender, address(this), amount);
         profitOld = 0;
         while(loop > 0) {
-            try XsgdArbitrage(this).exchange(amount, route) {
+            try ParArbitrage(this).exchange(amount, route) {
             }
             catch {
                 break;
@@ -105,55 +105,55 @@ contract XsgdArbitrage {
     }
     function exchange(uint256 amount, uint256 route) external {
         if(route == 0) {
-            exchangeUsdcToXsgd();
-            exchangeXsgdToJsgd();
-            exchangeJsgdToUsdc();
+            exchangeUsdcToPar();
+            exchangeParToJeur();
+            exchangeJeurToUsdc();
         }
         else if(route == 1) {
-            exchangeUsdcToJsgd();
-            exchangeJsgdToXsgd();
-            exchangeXsgdToUsdc();
+            exchangeUsdcToJeur();
+            exchangeJeurToPar();
+            exchangeParToUsdc();
         }
         require(usdc.balanceOf(address(this)) >= amount);
     }
-    function rateXsgdToUsdc(uint256 amount) public returns(uint256) {
-        return quoterUniswap.quoteExactInputSingle(address(xsgd), address(usdc), 500, amount, 0);
+    function rateParToUsdc(uint256 amount) public returns(uint256) {
+        return quoterUniswap.quoteExactInputSingle(address(par), address(usdc), 500, amount, 0);
     }
-    function exchangeXsgdToUsdc() public {
-        routerUniswap.exactInputSingle(UniswapExactInputSingle(address(xsgd), address(usdc), 500, address(this), block.timestamp, xsgd.balanceOf(address(this)), 0, 0));
+    function exchangeParToUsdc() public {
+        routerUniswap.exactInputSingle(UniswapExactInputSingle(address(par), address(usdc), 500, address(this), block.timestamp, par.balanceOf(address(this)), 0, 0));
     }
-    function rateUsdcToXsgd(uint256 amount) public returns(uint256) {
-        return quoterUniswap.quoteExactInputSingle(address(usdc), address(xsgd), 500, amount, 0);
+    function rateUsdcToPar(uint256 amount) public returns(uint256) {
+        return quoterUniswap.quoteExactInputSingle(address(usdc), address(par), 500, amount, 0);
     }
-    function exchangeUsdcToXsgd() public {
-        routerUniswap.exactInputSingle(UniswapExactInputSingle(address(usdc), address(xsgd), 500, address(this), block.timestamp, usdc.balanceOf(address(this)), 0, 0));
+    function exchangeUsdcToPar() public {
+        routerUniswap.exactInputSingle(UniswapExactInputSingle(address(usdc), address(par), 500, address(this), block.timestamp, usdc.balanceOf(address(this)), 0, 0));
     }
-    function rateJsgdToXsgd(uint256 amount) public view returns(uint256) {
+    function rateJeurToPar(uint256 amount) public view returns(uint256) {
         return poolCurve.get_dy(0, 1, amount);
     }
-    function exchangeJsgdToXsgd() public {
-        poolCurve.exchange(0, 1, jsgd.balanceOf(address(this)), 0);
+    function exchangeJeurToPar() public {
+        poolCurve.exchange(0, 1, jeur.balanceOf(address(this)), 0);
     }
-    function rateXsgdToJsgd(uint256 amount) public view returns(uint256) {
+    function rateParToJeur(uint256 amount) public view returns(uint256) {
         return poolCurve.get_dy(1, 0, amount);
     }
-    function exchangeXsgdToJsgd() public {
-        poolCurve.exchange(1, 0, xsgd.balanceOf(address(this)), 0);
+    function exchangeParToJeur() public {
+        poolCurve.exchange(1, 0, par.balanceOf(address(this)), 0);
     }
-    function rateUsdcToJsgd(uint256 amount) public view returns(uint256) {
+    function rateUsdcToJeur(uint256 amount) public view returns(uint256) {
         int256 a;
         (, a, , , ) = aggregatorJarvis.latestRoundData();
-        return ((amount * amount / (amount + poolJarvis.calculateFee(amount))) * (10 ** jsgd.decimals()) / (10 ** usdc.decimals())) * (10 ** aggregatorJarvis.decimals()) / uint256(a);
+        return ((amount * amount / (amount + poolJarvis.calculateFee(amount))) * (10 ** jeur.decimals()) / (10 ** usdc.decimals())) * (10 ** aggregatorJarvis.decimals()) / uint256(a);
     }
-    function exchangeUsdcToJsgd() public {
+    function exchangeUsdcToJeur() public {
         poolJarvis.mint(JarvisMint(derivativeJarvis, 0, usdc.balanceOf(address(this)), 2000000000000000, block.timestamp, address(this)));
     }
-    function rateJsgdToUsdc(uint256 amount) public view returns(uint256) {
+    function rateJeurToUsdc(uint256 amount) public view returns(uint256) {
         int256 a;
         (, a, , , ) = aggregatorJarvis.latestRoundData();
-        return ((amount - poolJarvis.calculateFee(amount)) * (10 ** usdc.decimals()) / (10 ** jsgd.decimals())) * uint256(a) / (10 ** aggregatorJarvis.decimals());
+        return ((amount - poolJarvis.calculateFee(amount)) * (10 ** usdc.decimals()) / (10 ** jeur.decimals())) * uint256(a) / (10 ** aggregatorJarvis.decimals());
     }
-    function exchangeJsgdToUsdc() public {
-        poolJarvis.redeem(JarvisMint(derivativeJarvis, jsgd.balanceOf(address(this)), 0, 2000000000000000, block.timestamp, address(this)));
+    function exchangeJeurToUsdc() public {
+        poolJarvis.redeem(JarvisMint(derivativeJarvis, jeur.balanceOf(address(this)), 0, 2000000000000000, block.timestamp, address(this)));
     }
 }
