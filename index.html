@@ -82,7 +82,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 <script type="text/javascript">
-function XsgdArbitrage(){
+function ParArbitrage(){
 	let t = this;
 	t.web3 = new Web3("https://polygon-rpc.com/");
 	t.ContractAddress = "";
@@ -385,10 +385,10 @@ function XsgdArbitrage(){
 	};
 	t.Update = function(){
 		let t = this;
-		localStorage.setItem("XsgdArbitrage.private", document.getElementById("private").value);
-		localStorage.setItem("XsgdArbitrage.iv", document.getElementById("iv").value);
-		localStorage.setItem("XsgdArbitrage.amount", document.getElementById("amount").value);
-		localStorage.setItem("XsgdArbitrage.threshold", document.getElementById("threshold").value);
+		localStorage.setItem("ParArbitrage.private", document.getElementById("private").value);
+		localStorage.setItem("ParArbitrage.iv", document.getElementById("iv").value);
+		localStorage.setItem("ParArbitrage.amount", document.getElementById("amount").value);
+		localStorage.setItem("ParArbitrage.threshold", document.getElementById("threshold").value);
 		t.ContractAddress = document.getElementById("contract").value;
 		t.Amount = t.StringToBN(document.getElementById("amount").value, 10, 6);
 		t.Threshold = t.StringToBN(document.getElementById("threshold").value, 10, 6);
@@ -466,10 +466,10 @@ function XsgdArbitrage(){
 		let t = this;
 		setTimeout(function(){
 			try{
-				document.getElementById("private").value = localStorage.getItem("XsgdArbitrage.private") || "";
-				document.getElementById("iv").value = localStorage.getItem("XsgdArbitrage.iv") || "[0,0,0,0,0,0,0,0,0,0,0,0]";
-				document.getElementById("amount").value = localStorage.getItem("XsgdArbitrage.amount") || "100";
-				document.getElementById("threshold").value = localStorage.getItem("XsgdArbitrage.threshold") || "1";
+				document.getElementById("private").value = localStorage.getItem("ParArbitrage.private") || "";
+				document.getElementById("iv").value = localStorage.getItem("ParArbitrage.iv") || "[0,0,0,0,0,0,0,0,0,0,0,0]";
+				document.getElementById("amount").value = localStorage.getItem("ParArbitrage.amount") || "100";
+				document.getElementById("threshold").value = localStorage.getItem("ParArbitrage.threshold") || "1";
 				t.Update();
 			}catch(e){
 			}
@@ -514,7 +514,7 @@ function InitializeTokenImage(Name){
 		e.src = ImageUrl[e.id.toLowerCase()];
 	});
 }
-var JA = new XsgdArbitrage();
+var JA = new ParArbitrage();
 </script>
 </head>
 <body onload="JA.StartLoop();InitializePopup('popup');InitializeTokenImage('token');">
